@@ -31,7 +31,28 @@ const rettiwt = new Rettiwt({
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const method = req.method;
+  const url = req.url;
+  const ip = req.ip || req.connection.remoteAddress;
+  
+  console.log(`[${timestamp}] ${method} ${url} - IP: ${ip}`);
+  
+  // Log response time
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const status = res.statusCode;
+    console.log(`[${timestamp}] ${method} ${url} - ${status} - ${duration}ms`);
+  });
+  
+  next();
+});
 
 // Bearer Token Authentication Middleware
 const authenticateToken = (req, res, next) => {
@@ -60,28 +81,42 @@ const authenticateToken = (req, res, next) => {
 
 // Basic health check endpoint
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Complete Twitter API with Rettiwt-API Integration', 
-    status: 'running',
-    authMode: API_KEY ? 'User Authentication (Full Access)' : 'Guest Authentication (Limited Access)',
-    environment: NODE_ENV,
-    endpoints: [
-      'GET / - Health check and API information',
-      'GET /user/:username - Get tweets from user',
-      'GET /search?q=keyword - Search tweets',
-      'GET /tweet/:id - Get specific tweet',
-      'GET /user/:username/info - Get user information',
-      'GET /trending - Trending topics (requires auth)',
-      'GET /advanced-search - Advanced search with filters',
-      'POST /tweet - Post a new tweet (requires auth)',
-      'POST /upload - Upload media for tweets (requires auth)',
-      'POST /tweet/:id/reply - Reply to a tweet (requires auth)',
-      'DELETE /tweet/:id - Delete a tweet (requires auth)',
-      'POST /tweet/:id/like - Like a tweet (requires auth)',
-      'DELETE /tweet/:id/like - Unlike a tweet (requires auth)',
-      'POST /tweet/:id/retweet - Retweet a tweet (requires auth)',
-      'DELETE /tweet/:id/retweet - Unretweet a tweet (requires auth)'
+  const endpoints = {
+    'Public Endpoints (No Auth Required)': [
+      'GET / - API Information',
+      'GET /health - Health Check',
+      'GET /user/:username - User Tweets',
+      'GET /search - Search Tweets',
+      'GET /tweet/:id - Tweet Details',
+      'GET /user/:username/info - User Info',
+      'GET /advanced-search - Advanced Search'
     ],
+    'Protected Endpoints (Bearer Token Required)': [
+      'POST /tweet - Post Tweet',
+      'POST /upload - Upload Media',
+      'POST /tweet/:id/reply - Reply to Tweet',
+      'DELETE /tweet/:id - Delete Tweet',
+      'POST /tweet/:id/like - Like Tweet',
+      'DELETE /tweet/:id/like - Unlike Tweet',
+      'POST /tweet/:id/retweet - Retweet',
+      'DELETE /tweet/:id/retweet - Unretweet'
+    ]
+  };
+
+  res.json({
+    success: true,
+    message: 'Twitter API Server is running! 🐦',
+    version: '1.0.0',
+    status: 'healthy',
+    endpoints: endpoints,
+    authentication: {
+      type: 'Bearer Token',
+      header: 'Authorization: Bearer <token>',
+      required_for: 'All POST/DELETE operations'
+    },
+    timestamp: new Date().toISOString(),
+    environment: NODE_ENV,
+    uptime: process.uptime(),
     examples: [
       `http://localhost:${PORT}/user/elonmusk`,
       `http://localhost:${PORT}/search?q=javascript`,
@@ -89,6 +124,46 @@ app.get('/', (req, res) => {
       `http://localhost:${PORT}/tweet/1234567890123456789`
     ]
   });
+});
+
+// Dedicated health check endpoint for monitoring
+app.get('/health', (req, res) => {
+  const healthCheck = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: NODE_ENV,
+    version: '1.0.0',
+    services: {
+      api: 'operational',
+      twitter_api: API_KEY ? 'configured' : 'not_configured',
+      authentication: BEARER_TOKEN !== 'your-secure-bearer-token-here' ? 'configured' : 'default_token'
+    },
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
+    },
+    system: {
+      platform: process.platform,
+      node_version: process.version,
+      pid: process.pid
+    }
+  };
+
+  // Check if critical services are working
+  if (!API_KEY || API_KEY === 'API_KEY') {
+    healthCheck.status = 'degraded';
+    healthCheck.warnings = ['Twitter API key not configured'];
+  }
+
+  if (BEARER_TOKEN === 'your-secure-bearer-token-here') {
+    healthCheck.status = 'degraded';
+    if (!healthCheck.warnings) healthCheck.warnings = [];
+    healthCheck.warnings.push('Default bearer token in use - security risk');
+  }
+
+  const statusCode = healthCheck.status === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(healthCheck);
 });
 
 // Get user tweets endpoint
@@ -785,69 +860,160 @@ app.get('/advanced-search', async (req, res) => {
   }
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error',
-    message: NODE_ENV === 'development' ? err.message : 'Something went wrong'
-  });
-});
-
-// 404 handler
+// 404 Handler - Route not found
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    error: 'Endpoint not found',
+    error: 'Route not found',
     message: `The endpoint ${req.method} ${req.originalUrl} does not exist`,
-    availableEndpoints: [
-      'GET /',
-      'GET /user/:username',
-      'GET /search?q=keyword',
-      'GET /tweet/:id',
-      'GET /user/:username/info',
-      'GET /trending',
-      'GET /advanced-search'
-    ]
+    suggestion: 'Check the API documentation for available endpoints',
+    available_endpoints: {
+      info: 'GET /',
+      health: 'GET /health',
+      documentation: 'See README.md for full API documentation'
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Complete Twitter API Server running on port ${PORT}`);
-  console.log(`📡 Authentication: ${API_KEY ? 'User (Full Access)' : 'Guest (Limited Access)'}`);
-  console.log(`🌍 Environment: ${NODE_ENV}`);
-  console.log(`\n📋 Available endpoints:`);
-  console.log(`  - GET / (health check & API info)`);
-  console.log(`  - GET /user/:username (get user tweets)`);
-  console.log(`  - GET /search?q=keyword (search tweets)`);
-  console.log(`  - GET /tweet/:id (get specific tweet)`);
-  console.log(`  - GET /user/:username/info (get user information)`);
-  console.log(`  - GET /trending (trending topics - requires auth)`);
-  console.log(`  - GET /advanced-search (advanced search with filters)`);
-  console.log(`  - POST /tweet (post new tweet - requires auth)`);
-  console.log(`  - POST /upload (upload media - requires auth)`);
-  console.log(`  - POST /tweet/:id/reply (reply to tweet - requires auth)`);
-  console.log(`  - DELETE /tweet/:id (delete tweet - requires auth)`);
-  console.log(`  - POST /tweet/:id/like (like tweet - requires auth)`);
-  console.log(`  - DELETE /tweet/:id/like (unlike tweet - requires auth)`);
-  console.log(`  - POST /tweet/:id/retweet (retweet - requires auth)`);
-  console.log(`  - DELETE /tweet/:id/retweet (unretweet - requires auth)`);
-  console.log(`\n🔗 Example usage:`);
-  console.log(`  - http://localhost:${PORT}/user/elonmusk`);
-  console.log(`  - http://localhost:${PORT}/search?q=javascript`);
-  console.log(`  - http://localhost:${PORT}/user/elonmusk/info`);
-  console.log(`  - http://localhost:${PORT}/tweet/1234567890123456789`);
-  console.log(`  - http://localhost:${PORT}/advanced-search?q=bitcoin&has_images=true`);
+// Global Error Handler
+app.use((err, req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const errorId = Math.random().toString(36).substr(2, 9);
   
-  if (API_KEY) {
-    console.log(`\n✅ API Key configured - Full access enabled!`);
-  } else {
-    console.log(`\n⚠️  No API Key - Using guest mode (limited access)`);
+  // Log error details
+  console.error(`[${timestamp}] ERROR [${errorId}]:`, {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip || req.connection.remoteAddress,
+    userAgent: req.get('User-Agent')
+  });
+  
+  // Determine error type and status code
+  let statusCode = err.statusCode || err.status || 500;
+  let errorType = 'Internal Server Error';
+  let userMessage = 'Something went wrong on our end';
+  
+  // Handle specific error types
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    errorType = 'Validation Error';
+    userMessage = 'Invalid input data';
+  } else if (err.name === 'UnauthorizedError') {
+    statusCode = 401;
+    errorType = 'Authentication Error';
+    userMessage = 'Invalid or missing authentication';
+  } else if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
+    statusCode = 503;
+    errorType = 'Service Unavailable';
+    userMessage = 'External service temporarily unavailable';
+  } else if (err.name === 'SyntaxError' && err.message.includes('JSON')) {
+    statusCode = 400;
+    errorType = 'JSON Parse Error';
+    userMessage = 'Invalid JSON format in request body';
   }
   
-  console.log(`\n🔧 Configuration:`);
-  console.log(`  - Rate Limit: ${RATE_LIMIT_MAX} requests per ${RATE_LIMIT_WINDOW} minutes`);
-  console.log(`  - Log Level: ${LOG_LEVEL}`);
+  // Response object
+  const errorResponse = {
+    success: false,
+    error: errorType,
+    message: userMessage,
+    error_id: errorId,
+    timestamp: timestamp
+  };
+  
+  // Add detailed error info in development
+  if (NODE_ENV === 'development') {
+    errorResponse.details = {
+      original_message: err.message,
+      stack: err.stack,
+      code: err.code
+    };
+  }
+  
+  // Add suggestions for common errors
+  if (statusCode === 401) {
+    errorResponse.suggestion = 'Include a valid Bearer token in the Authorization header';
+    errorResponse.example = 'Authorization: Bearer your-token-here';
+  } else if (statusCode === 400) {
+    errorResponse.suggestion = 'Check your request format and required parameters';
+  } else if (statusCode === 503) {
+    errorResponse.suggestion = 'Please try again in a few moments';
+  }
+  
+  res.status(statusCode).json(errorResponse);
+});
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Start server
+const server = app.listen(PORT, () => {
+  const timestamp = new Date().toISOString();
+  console.log(`\n🚀 Twitter API Server Started Successfully!`);
+  console.log(`📅 Timestamp: ${timestamp}`);
+  console.log(`🌐 Port: ${PORT}`);
+  console.log(`📱 Environment: ${NODE_ENV}`);
+  console.log(`🔑 Twitter API: ${API_KEY && API_KEY !== 'API_KEY' ? '✅ Configured' : '❌ Not Configured'}`);
+  console.log(`🛡️  Bearer Token: ${BEARER_TOKEN !== 'your-secure-bearer-token-here' ? '✅ Configured' : '⚠️  Default Token (Change Required)'}`);
+  console.log(`🌐 Local Access: http://localhost:${PORT}`);
+  console.log(`💚 Health Check: http://localhost:${PORT}/health`);
+  
+  console.log('\n📋 Available Endpoints:');
+  console.log('\n🔓 Public Endpoints (No Auth Required):');
+  console.log('  GET / - API Information');
+  console.log('  GET /health - Health Check');
+  console.log('  GET /user/:username - User Tweets');
+  console.log('  GET /search - Search Tweets');
+  console.log('  GET /tweet/:id - Tweet Details');
+  console.log('  GET /user/:username/info - User Info');
+  console.log('  GET /advanced-search - Advanced Search');
+  
+  console.log('\n🔒 Protected Endpoints (Bearer Token Required):');
+  console.log('  POST /tweet - Post Tweet');
+  console.log('  POST /upload - Upload Media');
+  console.log('  POST /tweet/:id/reply - Reply to Tweet');
+  console.log('  DELETE /tweet/:id - Delete Tweet');
+  console.log('  POST /tweet/:id/like - Like Tweet');
+  console.log('  DELETE /tweet/:id/like - Unlike Tweet');
+  console.log('  POST /tweet/:id/retweet - Retweet');
+  console.log('  DELETE /tweet/:id/retweet - Unretweet');
+  
+  console.log('\n🔧 Configuration Status:');
+  if (!API_KEY || API_KEY === 'API_KEY') {
+    console.log('  ⚠️  Warning: Twitter API key not configured');
+  }
+  if (BEARER_TOKEN === 'your-secure-bearer-token-here') {
+    console.log('  ⚠️  Warning: Default bearer token in use - security risk!');
+  }
+  
+  console.log('\n✅ Server is ready to accept connections!\n');
 });

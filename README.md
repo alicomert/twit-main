@@ -1,75 +1,148 @@
-# Twitter API Server with Rettiwt-API Integration
+# Twitter API Server
 
-🐦 Kapsamlı Twitter API sunucusu - Tweet atma, medya yükleme, reply yapma ve daha fazlası!
+Bu proje, Twitter API'sini kullanarak tweet'leri çekme, arama yapma ve çeşitli Twitter işlemlerini gerçekleştirme imkanı sunan bir Node.js sunucusudur. Coolify ve Nixpacks ile kolay deployment için optimize edilmiştir.
 
-## 📋 İçindekiler
+## 🚀 Özellikler
 
-- [Özellikler](#özellikler)
-- [Kurulum](#kurulum)
-- [Konfigürasyon](#konfigürasyon)
-- [API Endpoint'leri](#api-endpointleri)
-- [Kullanım Örnekleri](#kullanım-örnekleri)
-- [Hata Yönetimi](#hata-yönetimi)
-- [Güvenlik](#güvenlik)
+### 📖 Okuma İşlemleri (Kimlik Doğrulama Gerektirmez)
+- 🐦 Kullanıcı tweet'lerini çekme
+- 🔍 Tweet arama (kelime bazlı)
+- 📊 Kullanıcı bilgilerini alma
+- 📝 Belirli tweet detaylarını görüntüleme
+- 🔍 Gelişmiş arama filtreleri
 
-## ✨ Özellikler
+### ✍️ Yazma İşlemleri (Bearer Token Gerekli)
+- 📝 Tweet atma
+- 🖼️ Medya yükleme
+- 💬 Tweet'lere yanıt verme
+- 🗑️ Tweet silme
+- ❤️ Tweet beğenme/beğenmeme
+- 🔄 Retweet/Unretweet
 
-### 🔍 Okuma İşlemleri (Guest/User Auth)
-- ✅ Kullanıcı tweet'lerini getirme
-- ✅ Tweet arama (kelime bazlı)
-- ✅ Belirli tweet detayları
-- ✅ Kullanıcı bilgileri
-- ✅ Gelişmiş arama filtreleri
+### 🛡️ Güvenlik ve Performans
+- 🔐 Bearer Token Authentication
+- ⚡ Hızlı ve güvenilir API yanıtları
+- 📱 CORS desteği
+- 📊 Request logging
+- 🚨 Comprehensive error handling
+- 💚 Health check endpoint
+- 🔄 Graceful shutdown handling
 
-### ✍️ Yazma İşlemleri (User Auth Gerekli)
-- ✅ Tweet atma (metin)
-- ✅ Medya yükleme (fotoğraf/video)
-- ✅ Medya ile tweet atma
-- ✅ Tweet'lere reply yapma
-- ✅ Tweet silme
-- ✅ Tweet beğenme/beğenmeme
-- ✅ Retweet/unretweet
+## 🛠️ Kurulum
 
-## 🚀 Kurulum
-
-### Gereksinimler
-- Node.js (v14 veya üzeri)
-- npm veya yarn
-- Twitter API anahtarı (Rettiwt-API için)
-
-### Adımlar
+### Yerel Geliştirme
 
 1. **Projeyi klonlayın:**
-```bash
-git clone <repository-url>
-cd twit-main
-```
+   ```bash
+   git clone <repository-url>
+   cd twitter-api-server
+   ```
 
 2. **Bağımlılıkları yükleyin:**
+   ```bash
+   npm install
+   ```
+
+3. **Environment yapılandırması:**
+   
+   `.env` dosyasını düzenleyin:
+   ```env
+   # ===========================================
+   # ZORUNLU YAPILANDIRMA
+   # ===========================================
+   
+   # Twitter API Credentials (twitter-api-v2 için gerekli)
+   API_KEY=your_twitter_api_key_here
+   API_SECRET=your_twitter_api_secret_here
+   ACCESS_TOKEN=your_access_token_here
+   ACCESS_TOKEN_SECRET=your_access_token_secret_here
+   
+   # Bearer Token (Yazma işlemleri için gerekli)
+   # GÜVENLİK UYARISI: Production'da mutlaka değiştirin!
+   BEARER_TOKEN=your-secure-bearer-token-here
+   
+   # ===========================================
+   # OPSİYONEL YAPILANDIRMA
+   # ===========================================
+   
+   # Server Configuration
+   PORT=3000
+   NODE_ENV=production
+   
+   # Rate Limiting
+   RATE_LIMIT_MAX=100
+   RATE_LIMIT_WINDOW=15
+   
+   # Logging
+   LOG_LEVEL=info
+   ```
+
+4. **Bearer Token oluşturun:**
+   ```bash
+   # Güvenli token oluşturma örneği
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+
+5. **Sunucuyu başlatın:**
+   ```bash
+   npm start
+   ```
+
+   Sunucu varsayılan olarak `http://localhost:3000` adresinde çalışacaktır.
+
+### 🚀 Coolify ile Deployment
+
+#### Gereksinimler
+- Coolify v4+ kurulu server
+- Git repository (GitHub, GitLab, vb.)
+
+#### Deployment Adımları
+
+1. **Coolify Dashboard'da yeni proje oluşturun**
+
+2. **Build Pack ayarlarını yapın:**
+   - **Build Pack:** `nixpacks`
+   - **Port:** `3000`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+
+3. **Environment Variables ekleyin:**
+   ```env
+   API_KEY=your_twitter_api_key_here
+   API_SECRET=your_twitter_api_secret_here
+   ACCESS_TOKEN=your_access_token_here
+   ACCESS_TOKEN_SECRET=your_access_token_secret_here
+   BEARER_TOKEN=your-production-bearer-token
+   NODE_ENV=production
+   PORT=3000
+   ```
+
+4. **Deploy edin:**
+   - Repository'yi bağlayın
+   - Branch seçin (genellikle `main` veya `master`)
+   - Deploy butonuna tıklayın
+
+#### Coolify Özellikleri
+- ✅ Otomatik SSL sertifikası
+- ✅ Zero-downtime deployment
+- ✅ Health check monitoring
+- ✅ Automatic restarts
+- ✅ Log management
+- ✅ Environment variable management
+
+### 🐳 Docker ile Deployment (Alternatif)
+
 ```bash
-npm install
+# Docker image oluştur
+docker build -t twitter-api-server .
+
+# Container çalıştır
+docker run -d \
+  --name twitter-api \
+  -p 3000:3000 \
+  --env-file .env \
+  twitter-api-server
 ```
-
-**Not**: Dotenv bağımlılığı otomatik olarak yüklenecektir.
-
-3. **Environment variables dosyasını yapılandırın:**
-```bash
-# .env dosyasını düzenleyin
-TWITTER_API_KEY=YOUR_TWITTER_API_KEY_HERE
-```
-
-**Alternatif olarak** doğrudan server.js dosyasında:
-```javascript
-// server.js dosyasında
-const API_KEY = 'YOUR_TWITTER_API_KEY_HERE';
-```
-
-4. **Sunucuyu başlatın:**
-```bash
-node server.js
-```
-
-Sunucu `http://localhost:3000` adresinde çalışmaya başlayacaktır.
 
 ## ⚙️ Konfigürasyon
 
@@ -92,171 +165,145 @@ const LOG_LEVEL = 'info';
 - **Guest Mode**: API anahtarı olmadan, sadece okuma işlemleri
 - **User Mode**: API anahtarı ile, tüm işlemler mevcut
 
-## 📡 API Endpoint'leri
+## 📚 API Kullanımı
 
-### 🔍 Okuma İşlemleri
+### 🔓 Public Endpoints (Kimlik Doğrulama Gerektirmez)
 
-#### `GET /`
-Sağlık kontrolü ve API bilgileri
+#### 1. API Bilgileri ve Sağlık Kontrolü
+```http
+GET /
+```
+
+#### 2. Detaylı Sağlık Kontrolü
+```http
+GET /health
+```
+
+#### 3. Kullanıcı Tweet'lerini Alma
+```http
+GET /user/:username
+```
 
 **Örnek:**
 ```bash
-curl http://localhost:3000/
+curl "http://localhost:3000/user/elonmusk"
 ```
 
-#### `GET /user/:username`
-Kullanıcının tweet'lerini getir
-
-**Parametreler:**
-- `username`: Twitter kullanıcı adı
-- `count` (query): Tweet sayısı (varsayılan: 20)
+#### 4. Tweet Arama
+```http
+GET /search?q=keyword
+```
 
 **Örnek:**
 ```bash
-curl "http://localhost:3000/user/elonmusk?count=10"
+curl "http://localhost:3000/search?q=javascript"
 ```
 
-#### `GET /search`
-Tweet arama
-
-**Parametreler:**
-- `q` (query): Arama kelimesi
-- `count` (query): Sonuç sayısı (varsayılan: 20)
-
-**Örnek:**
-```bash
-curl "http://localhost:3000/search?q=javascript&count=15"
+#### 5. Kullanıcı Bilgilerini Alma
+```http
+GET /user/:username/info
 ```
 
-#### `GET /tweet/:id`
-Belirli bir tweet'in detayları
-
-**Örnek:**
-```bash
-curl http://localhost:3000/tweet/1234567890123456789
+#### 6. Belirli Tweet'i Alma
+```http
+GET /tweet/:id
 ```
 
-#### `GET /user/:username/info`
-Kullanıcı bilgileri
-
-**Örnek:**
-```bash
-curl http://localhost:3000/user/elonmusk/info
+#### 7. Gelişmiş Arama
+```http
+GET /advanced-search?q=keyword&has_images=true&lang=en
 ```
 
-#### `GET /advanced-search`
-Gelişmiş arama filtreleri
+### 🔒 Protected Endpoints (Bearer Token Gerekli)
 
-**Parametreler:**
-- `q`: Arama kelimesi
-- `from_user`: Belirli kullanıcıdan
-- `has_images`: Fotoğraflı tweet'ler (true/false)
-- `has_videos`: Videolu tweet'ler (true/false)
-- `count`: Sonuç sayısı
+> **Not:** Tüm yazma işlemleri için `Authorization: Bearer your-token` header'ı gereklidir.
 
-**Örnek:**
-```bash
-curl "http://localhost:3000/advanced-search?q=bitcoin&has_images=true&count=10"
-```
+#### 1. Tweet Atma
+```http
+POST /tweet
+Authorization: Bearer your-token
+Content-Type: application/json
 
-### ✍️ Yazma İşlemleri (Auth Gerekli)
-
-#### `POST /tweet`
-Yeni tweet at
-
-**Body:**
-```json
 {
-  "text": "Merhaba dünya! 🌍",
-  "media_ids": ["optional_media_id_1", "optional_media_id_2"]
+  "text": "Merhaba dünya! 🌍"
 }
 ```
 
-**Örnek:**
-```bash
-curl -X POST http://localhost:3000/tweet \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Merhaba dünya! 🌍"}'
+#### 2. Medya Yükleme
+```http
+POST /upload
+Authorization: Bearer your-token
+Content-Type: multipart/form-data
+
+# Form data ile dosya yükleme
 ```
 
-#### `POST /upload`
-Medya yükle (fotoğraf/video)
+#### 3. Tweet'e Yanıt Verme
+```http
+POST /tweet/:id/reply
+Authorization: Bearer your-token
+Content-Type: application/json
 
-**Body:**
-```json
 {
-  "media_data": "base64_encoded_media_data",
-  "media_type": "image/jpeg"
+  "text": "Harika bir tweet! 👍"
 }
 ```
 
-**Desteklenen formatlar:**
-- `image/jpeg`, `image/jpg`, `image/png`, `image/gif`
-- `video/mp4`, `video/mov`
+#### 4. Tweet Silme
+```http
+DELETE /tweet/:id
+Authorization: Bearer your-token
+```
 
-**Örnek:**
+#### 5. Tweet Beğenme
+```http
+POST /tweet/:id/like
+Authorization: Bearer your-token
+```
+
+#### 6. Tweet Beğenmeme
+```http
+DELETE /tweet/:id/like
+Authorization: Bearer your-token
+```
+
+#### 7. Retweet
+```http
+POST /tweet/:id/retweet
+Authorization: Bearer your-token
+```
+
+#### 8. Retweet Geri Alma
+```http
+DELETE /tweet/:id/retweet
+```
+
+### 🔐 Authentication
+
+#### Bearer Token Kullanımı
 ```bash
-curl -X POST http://localhost:3000/upload \
+# Örnek curl komutu
+curl -X POST "http://localhost:3000/tweet" \
+  -H "Authorization: Bearer your-secure-bearer-token-here" \
   -H "Content-Type: application/json" \
-  -d '{"media_data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", "media_type": "image/png"}'
+  -d '{"text": "API test tweet"}'
 ```
 
-#### `POST /tweet/:id/reply`
-Tweet'e reply yap
+#### JavaScript/Fetch Örneği
+```javascript
+const response = await fetch('http://localhost:3000/tweet', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer your-secure-bearer-token-here',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    text: 'API test tweet'
+  })
+});
 
-**Body:**
-```json
-{
-  "text": "Bu harika bir tweet! 👍",
-  "media_ids": ["optional_media_id"]
-}
-```
-
-**Örnek:**
-```bash
-curl -X POST http://localhost:3000/tweet/1234567890123456789/reply \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Bu harika bir tweet! 👍"}'
-```
-
-#### `DELETE /tweet/:id`
-Tweet'i sil
-
-**Örnek:**
-```bash
-curl -X DELETE http://localhost:3000/tweet/1234567890123456789
-```
-
-#### `POST /tweet/:id/like`
-Tweet'i beğen
-
-**Örnek:**
-```bash
-curl -X POST http://localhost:3000/tweet/1234567890123456789/like
-```
-
-#### `DELETE /tweet/:id/like`
-Tweet beğenisini kaldır
-
-**Örnek:**
-```bash
-curl -X DELETE http://localhost:3000/tweet/1234567890123456789/like
-```
-
-#### `POST /tweet/:id/retweet`
-Retweet yap
-
-**Örnek:**
-```bash
-curl -X POST http://localhost:3000/tweet/1234567890123456789/retweet
-```
-
-#### `DELETE /tweet/:id/retweet`
-Retweet'i geri al
-
-**Örnek:**
-```bash
-curl -X DELETE http://localhost:3000/tweet/1234567890123456789/retweet
+const result = await response.json();
+console.log(result);
 ```
 
 ## 💡 Kullanım Örnekleri
@@ -331,23 +378,42 @@ else:
     print(f"Hata: {response.status_code}")
 ```
 
-## ⚠️ Hata Yönetimi
+## 🚨 Hata Yönetimi
 
-### Yaygın Hata Kodları
+API, kapsamlı hata yönetimi ve logging sistemi içerir:
 
-- **400 Bad Request**: Geçersiz parametreler
-- **401 Unauthorized**: API anahtarı gerekli
-- **404 Not Found**: Tweet/kullanıcı bulunamadı
-- **500 Internal Server Error**: Sunucu hatası
+### HTTP Durum Kodları
+- `200` - Başarılı
+- `400` - Geçersiz istek / JSON parse hatası
+- `401` - Kimlik doğrulama hatası
+- `404` - Endpoint bulunamadı
+- `429` - Rate limit aşıldı
+- `500` - Sunucu hatası
+- `503` - Servis kullanılamıyor
 
 ### Hata Yanıt Formatı
 
 ```json
 {
   "success": false,
-  "error": "Hata açıklaması",
-  "message": "Detaylı hata mesajı",
-  "suggestion": "Çözüm önerisi"
+  "error": "Authentication Error",
+  "message": "Invalid or missing authentication",
+  "error_id": "abc123def",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "suggestion": "Include a valid Bearer token in the Authorization header",
+  "example": "Authorization: Bearer your-token-here"
+}
+```
+
+### Development Mode
+Geliştirme modunda (`NODE_ENV=development`) ek hata detayları:
+```json
+{
+  "details": {
+    "original_message": "Detailed error message",
+    "stack": "Error stack trace",
+    "code": "ERROR_CODE"
+  }
 }
 ```
 
@@ -364,33 +430,115 @@ else:
 - Varsayılan: 100 istek / 15 dakika
 - Aşırı kullanımda otomatik kısıtlama
 
-## 🛠️ Geliştirme
+## 🔧 Geliştirme
 
 ### Proje Yapısı
+
 ```
-twit-main/
+twitter-api-server/
 ├── server.js          # Ana sunucu dosyası
-├── package.json       # Bağımlılıklar
-├── package-lock.json  # Bağımlılık kilidi
-└── README.md          # Bu dosya
+├── package.json       # Proje bağımlılıkları
+├── .env              # Environment değişkenleri
+├── .gitignore        # Git ignore kuralları
+├── nixpacks.toml     # Coolify/Nixpacks konfigürasyonu
+├── Dockerfile        # Docker konfigürasyonu (alternatif)
+└── README.md         # Proje dokümantasyonu
 ```
 
-### Bağımlılıklar
-- `express`: Web framework
-- `cors`: Cross-origin resource sharing
-- `rettiwt-api`: Twitter API client
+### Geliştirme Modu
+
+```bash
+# Geliştirme modunda çalıştırma
+npm run dev
+
+# Production modunda çalıştırma
+npm start
+```
+
+### 📊 Monitoring ve Logging
+
+#### Request Logging
+- Tüm HTTP istekleri otomatik loglanır
+- Response time tracking
+- IP adresi ve User-Agent bilgileri
+
+#### Error Logging
+- Unique error ID'ler
+- Stack trace (development modunda)
+- Request context bilgileri
+
+#### Health Monitoring
+```bash
+# Sağlık kontrolü
+curl http://localhost:3000/health
+
+# Yanıt örneği
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "uptime": 3600,
+  "services": {
+    "twitter_api": "connected",
+    "bearer_auth": "configured"
+  },
+  "system": {
+    "memory_usage": "45.2 MB",
+    "platform": "linux"
+  }
+}
+```
+
+## 🔒 Güvenlik
+
+### Önemli Güvenlik Notları
+
+1. **Bearer Token Güvenliği:**
+   - Production'da mutlaka güçlü, unique token kullanın
+   - Token'ları asla kod içinde hardcode etmeyin
+   - Düzenli olarak token'ları rotate edin
+
+2. **Environment Variables:**
+   - `.env` dosyası asla git'e commit edilmemelidir
+   - Production'da environment variables kullanın
+
+3. **API Keys:**
+   - Twitter API anahtarlarını güvenli tutun
+   - Gerekli minimum izinlerle API anahtarları oluşturun
+
+### Rate Limiting
+- Varsayılan: 100 istek / 15 dakika
+- Coolify'da otomatik scaling ile yönetilebilir
+
+## 🚀 Production Checklist
+
+- [ ] Bearer token değiştirildi
+- [ ] Twitter API anahtarları yapılandırıldı
+- [ ] Environment variables ayarlandı
+- [ ] Health check endpoint test edildi
+- [ ] SSL sertifikası aktif
+- [ ] Monitoring kuruldu
+- [ ] Backup stratejisi belirlendi
 
 ## 📞 Destek
 
-Sorularınız için:
-1. GitHub Issues kullanın
-2. Dokümantasyonu kontrol edin
-3. API endpoint'lerini test edin
+### Troubleshooting
+
+**Problem:** Bearer token hatası
+```bash
+# Token'ı test edin
+curl -H "Authorization: Bearer your-token" http://localhost:3000/health
+```
+
+**Problem:** Twitter API bağlantı hatası
+- API anahtarlarını kontrol edin
+- Twitter API quota'nızı kontrol edin
+- Network bağlantısını test edin
+
+**Problem:** Coolify deployment hatası
+- Environment variables'ları kontrol edin
+- Build logs'ları inceleyin
+- Health check endpoint'ini test edin
 
 ## 📄 Lisans
 
 Bu proje MIT lisansı altında lisanslanmıştır.
-
----
-
-**Not**: Bu API, Rettiwt-API kütüphanesini kullanarak Twitter ile etkileşim kurar. Kullanım sırasında Twitter'ın hizmet şartlarına uygun davranın.
