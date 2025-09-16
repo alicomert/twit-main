@@ -10,6 +10,7 @@ dotenv.config();
 // ===== CONFIGURATION =====
 // Twitter API Configuration
 const API_KEY = process.env.TWITTER_API_KEY || 'API_KEY';
+const BEARER_TOKEN = process.env.BEARER_TOKEN || 'your-secure-bearer-token-here';
 
 // Server Configuration
 const PORT = 3000;
@@ -31,6 +32,31 @@ const rettiwt = new Rettiwt({
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Bearer Token Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: 'Access token required',
+      message: 'Please provide a valid Bearer token in Authorization header',
+      example: 'Authorization: Bearer your-token-here'
+    });
+  }
+
+  if (token !== BEARER_TOKEN) {
+    return res.status(403).json({
+      success: false,
+      error: 'Invalid token',
+      message: 'The provided token is not valid'
+    });
+  }
+
+  next();
+};
 
 // Basic health check endpoint
 app.get('/', (req, res) => {
@@ -277,8 +303,8 @@ app.get('/user/:username/info', async (req, res) => {
   }
 });
 
-// Post a new tweet
-app.post('/tweet', async (req, res) => {
+// Post a new tweet (Bearer Token Required)
+app.post('/tweet', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({
@@ -346,8 +372,8 @@ app.post('/tweet', async (req, res) => {
   }
 });
 
-// Upload media for tweets
-app.post('/upload', async (req, res) => {
+// Upload media for tweets (Bearer Token Required)
+app.post('/upload', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({
@@ -405,8 +431,8 @@ app.post('/upload', async (req, res) => {
   }
 });
 
-// Reply to a tweet
-app.post('/tweet/:id/reply', async (req, res) => {
+// Reply to a tweet (Bearer Token Required)
+app.post('/tweet/:id/reply', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({
@@ -510,8 +536,8 @@ app.get('/trending', async (req, res) => {
   }
 });
 
-// Delete a tweet
-app.delete('/tweet/:id', async (req, res) => {
+// Delete a tweet (Bearer Token Required)
+app.delete('/tweet/:id', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({
@@ -545,8 +571,8 @@ app.delete('/tweet/:id', async (req, res) => {
   }
 });
 
-// Like a tweet
-app.post('/tweet/:id/like', async (req, res) => {
+// Like a tweet (Bearer Token Required)
+app.post('/tweet/:id/like', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({
@@ -581,8 +607,8 @@ app.post('/tweet/:id/like', async (req, res) => {
   }
 });
 
-// Unlike a tweet
-app.delete('/tweet/:id/like', async (req, res) => {
+// Unlike a tweet (Bearer Token Required)
+app.delete('/tweet/:id/like', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({
@@ -617,8 +643,8 @@ app.delete('/tweet/:id/like', async (req, res) => {
   }
 });
 
-// Retweet a tweet
-app.post('/tweet/:id/retweet', async (req, res) => {
+// Retweet a tweet (Bearer Token Required)
+app.post('/tweet/:id/retweet', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({
@@ -653,8 +679,8 @@ app.post('/tweet/:id/retweet', async (req, res) => {
   }
 });
 
-// Unretweet a tweet
-app.delete('/tweet/:id/retweet', async (req, res) => {
+// Unretweet a tweet (Bearer Token Required)
+app.delete('/tweet/:id/retweet', authenticateToken, async (req, res) => {
   try {
     if (!API_KEY) {
       return res.status(401).json({

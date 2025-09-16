@@ -1,0 +1,62 @@
+# Nixpacks Configuration for Coolify Deployment
+# Twitter API Server with Rettiwt-API
+
+[variables]
+# Node.js version
+NODE_VERSION = "18"
+
+# Build configuration
+[build]
+# Install dependencies
+installCmd = "npm ci"
+
+# Build command (if needed)
+buildCmd = "npm run build"
+
+# Start configuration
+[start]
+# Production start command
+cmd = "npm start"
+
+# Health check configuration
+[health]
+# Health check endpoint
+path = "/health"
+# Health check port
+port = 3000
+# Health check timeout
+timeout = 30
+
+# Environment configuration
+[env]
+# Production environment
+NODE_ENV = "production"
+# Port configuration
+PORT = "3000"
+
+# Nixpacks providers
+[providers]
+# Use Node.js provider
+node = true
+
+# Additional configuration
+[phases.setup]
+# System dependencies if needed
+apt = []
+
+[phases.install]
+# Cache node_modules for faster builds
+cache = ["/app/node_modules"]
+
+[phases.build]
+# Build phase configuration
+dependsOn = ["install"]
+
+[phases.start]
+# Start phase configuration
+dependsOn = ["build"]
+
+# Static files configuration (if any)
+[staticAssets]
+# Serve static files from public directory
+"/public" = "public"
