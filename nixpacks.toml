@@ -35,9 +35,7 @@ NODE_ENV = "production"
 PORT = "3000"
 
 # Nixpacks providers
-[providers]
-# Use Node.js provider
-node = true
+providers = ["node"]
 
 # Additional configuration
 [phases.setup]
