@@ -13,8 +13,8 @@ const API_KEY = process.env.TWITTER_API_KEY || 'API_KEY';
 const BEARER_TOKEN = process.env.BEARER_TOKEN || 'your-secure-bearer-token-here';
 
 // Server Configuration
-const PORT = 3000;
-const NODE_ENV = 'development';
+const PORT = process.env.PORT || 3038;
+const NODE_ENV = process.env.NODE_ENV || 'production';
 
 // Optional Configuration
 const RATE_LIMIT_WINDOW = 15;
@@ -976,7 +976,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   const timestamp = new Date().toISOString();
   console.log(`\n🚀 Twitter API Server Started Successfully!`);
   console.log(`📅 Timestamp: ${timestamp}`);

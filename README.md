@@ -130,20 +130,6 @@ Bu proje, Twitter API'sini kullanarak tweet'leri çekme, arama yapma ve çeşitl
 - ✅ Log management
 - ✅ Environment variable management
 
-### 🐳 Docker ile Deployment (Alternatif)
-
-```bash
-# Docker image oluştur
-docker build -t twitter-api-server .
-
-# Container çalıştır
-docker run -d \
-  --name twitter-api \
-  -p 3000:3000 \
-  --env-file .env \
-  twitter-api-server
-```
-
 ## ⚙️ Konfigürasyon
 
 ### Temel Ayarlar
